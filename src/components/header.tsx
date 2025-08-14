@@ -31,13 +31,15 @@ export function Navigation() {
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+
+          {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <motion.div
               className="flex items-center cursor-pointer"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
             >
-              {/* Logo */}
+              {/* image */}
               <div className="flex items-center space-x-1">
                 <Image
                   src="/logo/cccgi.png"

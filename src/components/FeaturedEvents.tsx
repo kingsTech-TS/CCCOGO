@@ -1,14 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, MapPin, Users } from "lucide-react"
+import Link from "next/link"
 
-export function EventsCalendar() {
-  const [selectedMonth, setSelectedMonth] = useState("December 2024")
-
-  const upcomingEvents = [
+export function FeaturedEvents() {
+  const featuredEvents = [
     {
       date: "Dec 15",
       day: "Sunday",
@@ -40,36 +38,6 @@ export function EventsCalendar() {
       attendees: "All Ages Welcome",
       category: "Worship",
     },
-    {
-      date: "Dec 29",
-      day: "Sunday",
-      title: "Year-End Testimony Service",
-      time: "10:00 AM",
-      location: "Main Sanctuary",
-      description: "Share how God has worked in your life this year and celebrate His faithfulness together.",
-      attendees: "All Ages Welcome",
-      category: "Fellowship",
-    },
-    {
-      date: "Jan 5",
-      day: "Sunday",
-      title: "New Year Prayer & Fasting",
-      time: "6:00 AM",
-      location: "Prayer Room",
-      description: "Start the new year seeking God's direction through prayer and fasting.",
-      attendees: "Adults",
-      category: "Prayer",
-    },
-    {
-      date: "Jan 12",
-      day: "Sunday",
-      title: "Baptism Sunday",
-      time: "11:00 AM",
-      location: "Main Sanctuary",
-      description: "Celebrate with those taking their next step in faith through baptism.",
-      attendees: "All Ages Welcome",
-      category: "Worship",
-    },
   ]
 
   const getCategoryColor = (category: string) => {
@@ -83,35 +51,18 @@ export function EventsCalendar() {
   }
 
   return (
-    <section className="py-16 bg-white" id="calender">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-16 bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="font-serif text-3xl md:text-4xl font-bold text-gray-900 mb-4">Upcoming Events</h2>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-gray-900 mb-4">Featured Events</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Mark your calendar and join us for these special gatherings and celebrations.
+            Here are some highlights you won’t want to miss.
           </p>
         </div>
 
-        {/* Month Selector */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-gray-100 rounded-lg p-1 flex space-x-1">
-            {["December 2024", "January 2025", "February 2025"].map((month) => (
-              <Button
-                key={month}
-                variant={selectedMonth === month ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setSelectedMonth(month)}
-                className={selectedMonth === month ? "bg-primary hover:bg-primary/90" : ""}
-              >
-                {month}
-              </Button>
-            ))}
-          </div>
-        </div>
-
         {/* Events Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {upcomingEvents.map((event, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          {featuredEvents.map((event, index) => (
             <Card key={index} className="hover:shadow-lg transition-shadow duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
@@ -150,14 +101,19 @@ export function EventsCalendar() {
                     {event.attendees}
                   </div>
                 </div>
-
-                <Button className="w-full mt-4 bg-primary hover:bg-primary/90" size="sm">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Add to Calendar
-                </Button>
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* See More Button */}
+        <div className="text-center">
+          <Link href="/events#calender">
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white">
+              <Calendar className="mr-2 h-5 w-5" />
+              See More Events
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

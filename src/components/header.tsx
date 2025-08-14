@@ -69,7 +69,9 @@ export function Navigation() {
                 {item.label}
               </Link>
             ))}
+            <Link href="/giving">
             <Button className="bg-primary hover:bg-primary/90">Give Online</Button>
+            </Link>
           </div>
 
           {/* Mobile + Tablet menu button */}

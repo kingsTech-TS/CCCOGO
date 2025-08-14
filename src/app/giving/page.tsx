@@ -1,7 +1,7 @@
 import { Navigation } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { GivingHero } from "@/components/giving-hero"
-import { DonationForm } from "@/components/donation-form"
+import { DonationForm } from "@/app/donate/page"
 import { GivingImpact } from "@/components/giving-impact"
 import { GivingFAQ } from "@/components/giving-faq"
 

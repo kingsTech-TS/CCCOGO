@@ -87,7 +87,7 @@ export function DonationForm() {
 
   if (isSubmitted) {
     return (
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white" id="donate">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <Card className="text-center">
             <CardContent className="p-12">

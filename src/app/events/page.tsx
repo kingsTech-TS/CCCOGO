@@ -1,4 +1,4 @@
-import { Navigation } from "@/components/navigation"
+import { Navigation } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { EventsCalendar } from "@/components/events-calendar"
 import { PhotoGallery } from "@/components/photo-gallery"

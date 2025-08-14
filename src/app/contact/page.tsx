@@ -1,4 +1,4 @@
-import { Navigation } from "@/components/navigation"
+import { Navigation } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ContactInfo } from "@/components/contact-info"
 import { ContactForm } from "@/components/contact-form"

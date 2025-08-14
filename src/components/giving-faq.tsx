@@ -16,7 +16,7 @@ export function GivingFAQ() {
     {
       question: "Will I receive a tax receipt?",
       answer:
-        "Yes, you will receive an immediate email receipt for your donation, and we'll send you an annual giving statement by January 31st for tax purposes. All donations to Grace Community Church are tax-deductible.",
+        "Yes, you will receive an immediate email receipt for your donation, and we'll send you an annual giving statement by January 31st for tax purposes. All donations to Christ Chosen Church of God Oremeji Church are tax-deductible.",
     },
     {
       question: "Can I set up recurring donations?",

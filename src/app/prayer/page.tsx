@@ -1,4 +1,4 @@
-import { Navigation } from "@/components/navigation"
+import { Navigation } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { PrayerRequestForm } from "@/components/prayer-request-form"
 import { PrayerTestimonies } from "@/components/prayer-testimonies"

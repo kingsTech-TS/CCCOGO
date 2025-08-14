@@ -1,4 +1,4 @@
-import { Navigation } from "@/components/navigation"
+import { Navigation } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { LiveStreamSection } from "@/components/live-stream-section"
 import { SermonArchive } from "@/components/sermon-archive"

@@ -1,4 +1,4 @@
-import { Navigation } from "@/components/navigation"
+import { Navigation } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ServiceTimesSection } from "@/components/service-times-section"
 import { MinistriesSection } from "@/components/ministries-section"

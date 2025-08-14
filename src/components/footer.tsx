@@ -10,7 +10,7 @@ export function Footer() {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <Heart className="h-8 w-8 text-primary" />
-              <span className="font-serif font-bold text-xl">Grace Community Church</span>
+              <span className="font-serif font-bold text-xl">Christ Chosen Church of God Oremeji Church</span>
             </div>
             <p className="text-gray-300 mb-4 max-w-md">
               A welcoming church family where faith grows, hope flourishes, and community thrives. Join us in worship
@@ -63,7 +63,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 Grace Community Church. All rights reserved.</p>
+          <p>&copy; 2024 Christ Chosen Church of God Oremeji Church. All rights reserved.</p>
         </div>
       </div>
     </footer>

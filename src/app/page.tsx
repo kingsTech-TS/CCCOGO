@@ -1,4 +1,4 @@
-import { Navigation } from "@/components/navigation"
+import { Navigation } from "@/components/header"
 import { HeroSection } from "@/components/hero-section"
 import { QuickInfoCards } from "@/components/quick-info-cards"
 import { Footer } from "@/components/footer"

@@ -3,7 +3,16 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { motion, AnimatePresence } from "framer-motion"
 import { Menu, X, Heart } from "lucide-react"
+import Image from "next/image"
+import { Playfair_Display } from "next/font/google"
+
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+})
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
@@ -22,14 +31,33 @@ export function Navigation() {
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <Heart className="h-8 w-8 text-primary" />
-            <span className="font-serif font-bold text-xl text-gray-900">Grace Community</span>
-          </Link>
+            <motion.div
+              className="flex items-center cursor-pointer"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              {/* Logo */}
+              <div className="flex items-center space-x-1">
+                <Image
+                  src="/logo/cccgi.png"
+                  alt="Church Logo"
+                  width={36}
+                  height={36}
+                  className="w-8 h-8 sm:w-9 sm:h-9 object-contain"
+                />
+              </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+              {/* Church Name */}
+              <span
+                className={`${playfair.className} ml-2 text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-gray-900 tracking-wide`}
+              >
+                Christ Chosen Church of God Oremeji
+              </span>
+            </motion.div>
+          </Link>
+          {/* Desktop Navigation (only large screens) */}
+          <div className="hidden lg:flex items-center space-x-8">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -42,17 +70,17 @@ export function Navigation() {
             <Button className="bg-primary hover:bg-primary/90">Give Online</Button>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
+          {/* Mobile + Tablet menu button */}
+          <div className="lg:hidden">
             <Button variant="ghost" size="sm" onClick={() => setIsOpen(!isOpen)}>
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile + Tablet Navigation */}
         {isOpen && (
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t">
               {navItems.map((item) => (
                 <Link

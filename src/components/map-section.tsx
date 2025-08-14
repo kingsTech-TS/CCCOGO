@@ -12,12 +12,12 @@ export function MapSection() {
             allowFullScreen
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
-            title="Grace Community Church Location"
+            title="Christ Chosen Church of God Oremeji Church Location"
           ></iframe>
         </div>
         <div className="mt-6 text-center">
           <p className="text-gray-600 mb-4">
-            <strong>Grace Community Church</strong>
+            <strong>Christ Chosen Church of God Oremeji Church</strong>
             <br />
             123 Faith Street, Community City, CC 12345
           </p>

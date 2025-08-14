@@ -54,7 +54,7 @@ export function MissionSection() {
           <div className="max-w-4xl mx-auto text-center">
             <h3 className="font-serif text-2xl md:text-3xl font-bold text-gray-900 mb-6">Our Story</h3>
             <p className="text-lg text-gray-700 leading-relaxed mb-6">
-              Grace Community Church was founded in 1985 with a simple vision: to create a place where people could
+              Christ Chosen Church of God Oremeji Church was founded in 1985 with a simple vision: to create a place where people could
               experience God's love and find their spiritual home. What started as a small gathering of families has
               grown into a vibrant community of believers from all walks of life.
             </p>

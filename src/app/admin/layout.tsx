@@ -53,7 +53,7 @@ export default function AdminLayout({
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-primary">Admin Login</CardTitle>
-            <p className="text-muted-foreground">Grace Community Church</p>
+            <p className="text-muted-foreground">Christ Chosen Church of God Oremeji</p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -165,7 +165,7 @@ export default function AdminLayout({
               <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
                 <Menu className="h-4 w-4" />
               </Button>
-              <h1 className="text-xl font-bold text-foreground">Grace Community Church Admin</h1>
+              <h1 className="text-xl font-bold text-foreground">Christ Chosen Church of God Oremeji Admin</h1>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Welcome, Admin</span>

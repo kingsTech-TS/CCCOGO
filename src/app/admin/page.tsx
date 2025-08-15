@@ -9,7 +9,7 @@ export default function AdminDashboard() {
       <div>
         <h2 className="text-3xl font-bold text-foreground mb-2">Dashboard Overview</h2>
         <p className="text-muted-foreground">
-          Welcome to the Grace Community Church admin panel. Here's what's happening today.
+          Welcome to the Christ Chosen Church of God Oremeji admin panel. Here's what's happening today.
         </p>
       </div>
 

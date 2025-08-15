@@ -25,7 +25,7 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "Grace Community Church - A Place of Faith, Hope, and Community",
+  title: "Christ Chosen Church of God Oremeji - A Place of Faith, Hope, and Community",
   description:
     "Join our welcoming church family for worship, fellowship, and spiritual growth. Service times, events, and online giving available.",
   generator: "v0.app",

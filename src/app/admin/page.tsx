@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Heart, Calendar, DollarSign, BookOpen, Play, TrendingUp, Clock } from "lucide-react"
+import Link from "next/link"
 
 export default function AdminDashboard() {
   return (
@@ -110,10 +111,14 @@ export default function AdminDashboard() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <Card className="p-4 hover:bg-accent/10 cursor-pointer transition-colors">
+              
                 <div className="flex flex-col items-center text-center gap-2">
+                  <Link href="/admin/sunday-school">
                   <BookOpen className="h-6 w-6 text-primary" />
                   <span className="text-sm font-medium">Add Sunday School</span>
+                  </Link>
                 </div>
+                
               </Card>
               <Card className="p-4 hover:bg-accent/10 cursor-pointer transition-colors">
                 <div className="flex flex-col items-center text-center gap-2">

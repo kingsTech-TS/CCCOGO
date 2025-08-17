@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Trash2, Save, X, BookOpen } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface SundaySchoolLesson {
   id: string
@@ -71,6 +72,7 @@ export default function SundaySchoolManagement() {
   const [editingLesson, setEditingLesson] = useState<SundaySchoolLesson | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [formData, setFormData] = useState<Partial<SundaySchoolLesson>>({})
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const handleCreate = () => {
     setIsCreating(true)
@@ -87,12 +89,14 @@ export default function SundaySchoolManagement() {
       teacher: "",
       status: "draft",
     })
+    setIsModalOpen(true)
   }
 
   const handleEdit = (lesson: SundaySchoolLesson) => {
     setEditingLesson(lesson)
     setIsCreating(false)
     setFormData(lesson)
+    setIsModalOpen(true)
   }
 
   const handleSave = () => {
@@ -116,6 +120,7 @@ export default function SundaySchoolManagement() {
     setIsCreating(false)
     setEditingLesson(null)
     setFormData({})
+    setIsModalOpen(false)
   }
 
   const handleDelete = (id: string) => {
@@ -177,15 +182,15 @@ export default function SundaySchoolManagement() {
       </div>
 
       {/* Create/Edit Form */}
-      {(isCreating || editingLesson) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
               {isCreating ? "Create New Lesson" : "Edit Lesson"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="week">Week Number</Label>
@@ -342,9 +347,9 @@ export default function SundaySchoolManagement() {
                 Cancel
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Lessons List */}
       <Card>

@@ -1,5 +1,7 @@
 "use client"
 
+import { DialogTrigger } from "@/components/ui/dialog"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar, Plus, Edit, Trash2, Save, Upload, ImageIcon, MapPin, Clock, Users, Star, Eye } from "lucide-react"
 
@@ -142,6 +144,9 @@ export default function EventsGalleryManagement() {
   const [formData, setFormData] = useState<Partial<ChurchEvent>>({})
   const [activeTab, setActiveTab] = useState("events")
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false)
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
+  const [selectedEventForPhotos, setSelectedEventForPhotos] = useState<string>("")
 
   const handleCreateEvent = () => {
     setIsCreating(true)
@@ -161,12 +166,14 @@ export default function EventsGalleryManagement() {
       status: "upcoming",
       gallery: [],
     })
+    setIsEventModalOpen(true)
   }
 
   const handleEditEvent = (event: ChurchEvent) => {
     setEditingEvent(event)
     setIsCreating(false)
     setFormData(event)
+    setIsEventModalOpen(true)
   }
 
   const handleSaveEvent = () => {
@@ -195,16 +202,16 @@ export default function EventsGalleryManagement() {
     setIsCreating(false)
     setEditingEvent(null)
     setFormData({})
+    setIsEventModalOpen(false)
   }
 
-  const handleDeleteEvent = (id: string) => {
-    if (confirm("Are you sure you want to delete this event?")) {
-      setEvents(events.filter((event) => event.id !== id))
-    }
+  const handleOpenPhotoModal = (eventId: string) => {
+    setSelectedEventForPhotos(eventId)
+    setIsPhotoModalOpen(true)
   }
 
-  const handleFileUpload = (eventId: string) => {
-    if (!selectedFiles) return
+  const handlePhotoUpload = () => {
+    if (!selectedFiles || !selectedEventForPhotos) return
 
     const newPhotos: EventPhoto[] = Array.from(selectedFiles).map((file, index) => ({
       id: `${Date.now()}-${index}`,
@@ -216,7 +223,7 @@ export default function EventsGalleryManagement() {
 
     setEvents(
       events.map((event) =>
-        event.id === eventId
+        event.id === selectedEventForPhotos
           ? {
               ...event,
               gallery: [...event.gallery, ...newPhotos],
@@ -227,6 +234,14 @@ export default function EventsGalleryManagement() {
     )
 
     setSelectedFiles(null)
+    setIsPhotoModalOpen(false)
+    setSelectedEventForPhotos("")
+  }
+
+  const handleDeleteEvent = (id: string) => {
+    if (confirm("Are you sure you want to delete this event?")) {
+      setEvents(events.filter((event) => event.id !== id))
+    }
   }
 
   const handleDeletePhoto = (eventId: string, photoId: string) => {
@@ -325,6 +340,210 @@ export default function EventsGalleryManagement() {
         </Button>
       </div>
 
+      <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              {isCreating ? "Create New Event" : "Edit Event"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Event Title</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Enter event title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value: ChurchEvent["category"]) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="worship">Worship</SelectItem>
+                    <SelectItem value="youth">Youth</SelectItem>
+                    <SelectItem value="community">Community</SelectItem>
+                    <SelectItem value="outreach">Outreach</SelectItem>
+                    <SelectItem value="special">Special</SelectItem>
+                    <SelectItem value="ministry">Ministry</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Enter event description"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date">Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="time">Start Time</Label>
+                <Input
+                  id="time"
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endTime">End Time</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Capacity</Label>
+                <Input
+                  id="capacity"
+                  type="number"
+                  value={formData.capacity}
+                  onChange={(e) => setFormData({ ...formData, capacity: Number.parseInt(e.target.value) || undefined })}
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Enter event location"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value: ChurchEvent["status"]) => setFormData({ ...formData, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="upcoming">Upcoming</SelectItem>
+                    <SelectItem value="ongoing">Ongoing</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="contactEmail">Contact Email</Label>
+                <Input
+                  id="contactEmail"
+                  type="email"
+                  value={formData.contactEmail}
+                  onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                  placeholder="Optional contact email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contactPhone">Contact Phone</Label>
+                <Input
+                  id="contactPhone"
+                  type="tel"
+                  value={formData.contactPhone}
+                  onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                  placeholder="Optional contact phone"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="registrationRequired"
+                checked={formData.registrationRequired}
+                onChange={(e) => setFormData({ ...formData, registrationRequired: e.target.checked })}
+                className="rounded"
+              />
+              <Label htmlFor="registrationRequired">Registration Required</Label>
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={handleSaveEvent} className="flex items-center gap-2">
+                <Save className="h-4 w-4" />
+                Save Event
+              </Button>
+              <Button variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Upload Photos
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="photos">Select Photos</Label>
+              <Input
+                id="photos"
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => setSelectedFiles(e.target.files)}
+              />
+            </div>
+            {selectedFiles && (
+              <p className="text-sm text-muted-foreground">
+                Selected {selectedFiles.length} file{selectedFiles.length !== 1 ? "s" : ""}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <Button onClick={handlePhotoUpload} disabled={!selectedFiles} className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Upload Photos
+              </Button>
+              <Button variant="outline" onClick={() => setIsPhotoModalOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="events">Events</TabsTrigger>
@@ -332,176 +551,6 @@ export default function EventsGalleryManagement() {
         </TabsList>
 
         <TabsContent value="events" className="space-y-6">
-          {/* Create/Edit Event Form */}
-          {(isCreating || editingEvent) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  {isCreating ? "Create New Event" : "Edit Event"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Event Title</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="Enter event title"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value: ChurchEvent["category"]) => setFormData({ ...formData, category: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="worship">Worship</SelectItem>
-                        <SelectItem value="youth">Youth</SelectItem>
-                        <SelectItem value="community">Community</SelectItem>
-                        <SelectItem value="outreach">Outreach</SelectItem>
-                        <SelectItem value="special">Special</SelectItem>
-                        <SelectItem value="ministry">Ministry</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Enter event description"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="time">Start Time</Label>
-                    <Input
-                      id="time"
-                      type="time"
-                      value={formData.time}
-                      onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endTime">End Time</Label>
-                    <Input
-                      id="endTime"
-                      type="time"
-                      value={formData.endTime}
-                      onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="capacity">Capacity</Label>
-                    <Input
-                      id="capacity"
-                      type="number"
-                      value={formData.capacity}
-                      onChange={(e) =>
-                        setFormData({ ...formData, capacity: Number.parseInt(e.target.value) || undefined })
-                      }
-                      placeholder="Optional"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="Enter event location"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value: ChurchEvent["status"]) => setFormData({ ...formData, status: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="upcoming">Upcoming</SelectItem>
-                        <SelectItem value="ongoing">Ongoing</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contactEmail">Contact Email</Label>
-                    <Input
-                      id="contactEmail"
-                      type="email"
-                      value={formData.contactEmail}
-                      onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                      placeholder="Optional contact email"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contactPhone">Contact Phone</Label>
-                    <Input
-                      id="contactPhone"
-                      type="tel"
-                      value={formData.contactPhone}
-                      onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                      placeholder="Optional contact phone"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="registrationRequired"
-                    checked={formData.registrationRequired}
-                    onChange={(e) => setFormData({ ...formData, registrationRequired: e.target.checked })}
-                    className="rounded"
-                  />
-                  <Label htmlFor="registrationRequired">Registration Required</Label>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button onClick={handleSaveEvent} className="flex items-center gap-2">
-                    <Save className="h-4 w-4" />
-                    Save Event
-                  </Button>
-                  <Button variant="outline" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Events List */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {events.map((event) => (
@@ -589,27 +638,10 @@ export default function EventsGalleryManagement() {
                       {event.title} Gallery
                     </div>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={(e) => setSelectedFiles(e.target.files)}
-                        className="hidden"
-                        id={`upload-${event.id}`}
-                      />
-                      <Label htmlFor={`upload-${event.id}`} className="cursor-pointer">
-                        <Button variant="outline" size="sm" asChild>
-                          <span className="flex items-center gap-2">
-                            <Upload className="h-3 w-3" />
-                            Upload Photos
-                          </span>
-                        </Button>
-                      </Label>
-                      {selectedFiles && (
-                        <Button size="sm" onClick={() => handleFileUpload(event.id)}>
-                          Add {selectedFiles.length} Photos
-                        </Button>
-                      )}
+                      <Button variant="outline" size="sm" onClick={() => handleOpenPhotoModal(event.id)}>
+                        <Upload className="h-3 w-3 mr-2" />
+                        Upload Photos
+                      </Button>
                     </div>
                   </CardTitle>
                 </CardHeader>

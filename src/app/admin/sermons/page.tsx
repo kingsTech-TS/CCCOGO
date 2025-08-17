@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Play, Plus, Edit, Trash2, Save, Video, Music, Search, Star, Calendar, User, BookOpen } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface Sermon {
   id: string
@@ -145,6 +146,7 @@ export default function SermonsArchiveManagement() {
   const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null)
   const [selectedAudioFile, setSelectedAudioFile] = useState<File | null>(null)
   const [selectedThumbnail, setSelectedThumbnail] = useState<File | null>(null)
+  const [isSermonModalOpen, setIsSermonModalOpen] = useState(false)
 
   const handleCreateSermon = () => {
     setIsCreating(true)
@@ -161,12 +163,14 @@ export default function SermonsArchiveManagement() {
       isFeatured: false,
       status: "draft",
     })
+    setIsSermonModalOpen(true)
   }
 
   const handleEditSermon = (sermon: Sermon) => {
     setEditingSermon(sermon)
     setIsCreating(false)
     setFormData(sermon)
+    setIsSermonModalOpen(true)
   }
 
   const handleSaveSermon = () => {
@@ -210,6 +214,7 @@ export default function SermonsArchiveManagement() {
     setSelectedVideoFile(null)
     setSelectedAudioFile(null)
     setSelectedThumbnail(null)
+    setIsSermonModalOpen(false)
   }
 
   const handleDeleteSermon = (id: string) => {
@@ -371,6 +376,216 @@ export default function SermonsArchiveManagement() {
         </Card>
       </div>
 
+      <Dialog open={isSermonModalOpen} onOpenChange={setIsSermonModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Play className="h-5 w-5" />
+              {isCreating ? "Add New Sermon" : "Edit Sermon"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Sermon Title</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Enter sermon title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="speaker">Speaker</Label>
+                <Input
+                  id="speaker"
+                  value={formData.speaker}
+                  onChange={(e) => setFormData({ ...formData, speaker: e.target.value })}
+                  placeholder="Enter speaker name"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Enter sermon description"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date">Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value: Sermon["category"]) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sunday-service">Sunday Service</SelectItem>
+                    <SelectItem value="bible-study">Bible Study</SelectItem>
+                    <SelectItem value="special-event">Special Event</SelectItem>
+                    <SelectItem value="youth">Youth</SelectItem>
+                    <SelectItem value="womens">Women's Ministry</SelectItem>
+                    <SelectItem value="mens">Men's Ministry</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value: Sermon["status"]) => setFormData({ ...formData, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="series">Series (Optional)</Label>
+                <Select
+                  value={formData.series || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, series: value === "none" ? "" : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select series" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Series</SelectItem>
+                    {series.map((s) => (
+                      <SelectItem key={s.id} value={s.name}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="scriptureReference">Scripture Reference</Label>
+                <Input
+                  id="scriptureReference"
+                  value={formData.scriptureReference}
+                  onChange={(e) => setFormData({ ...formData, scriptureReference: e.target.value })}
+                  placeholder="e.g., John 3:16"
+                />
+              </div>
+            </div>
+
+            {/* File Uploads */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="video">Video File</Label>
+                <Input
+                  id="video"
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => setSelectedVideoFile(e.target.files?.[0] || null)}
+                />
+                {selectedVideoFile && (
+                  <p className="text-sm text-muted-foreground">Selected: {selectedVideoFile.name}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="audio">Audio File</Label>
+                <Input
+                  id="audio"
+                  type="file"
+                  accept="audio/*"
+                  onChange={(e) => setSelectedAudioFile(e.target.files?.[0] || null)}
+                />
+                {selectedAudioFile && (
+                  <p className="text-sm text-muted-foreground">Selected: {selectedAudioFile.name}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="thumbnail">Thumbnail</Label>
+                <Input
+                  id="thumbnail"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setSelectedThumbnail(e.target.files?.[0] || null)}
+                />
+                {selectedThumbnail && (
+                  <p className="text-sm text-muted-foreground">Selected: {selectedThumbnail.name}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {formData.tags?.map((tag) => (
+                  <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                    {tag}
+                    <button onClick={() => removeTag(tag)} className="ml-1 text-xs">
+                      ×
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add tag"
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault()
+                      addTag((e.target as HTMLInputElement).value)
+                      ;(e.target as HTMLInputElement).value = ""
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isFeatured"
+                checked={formData.isFeatured}
+                onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                className="rounded"
+              />
+              <Label htmlFor="isFeatured">Featured Sermon</Label>
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={handleSaveSermon} className="flex items-center gap-2">
+                <Save className="h-4 w-4" />
+                Save Sermon
+              </Button>
+              <Button variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="sermons">Sermons</TabsTrigger>
@@ -378,217 +593,6 @@ export default function SermonsArchiveManagement() {
         </TabsList>
 
         <TabsContent value="sermons" className="space-y-6">
-          {/* Create/Edit Sermon Form */}
-          {(isCreating || editingSermon) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Play className="h-5 w-5" />
-                  {isCreating ? "Add New Sermon" : "Edit Sermon"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Sermon Title</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="Enter sermon title"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="speaker">Speaker</Label>
-                    <Input
-                      id="speaker"
-                      value={formData.speaker}
-                      onChange={(e) => setFormData({ ...formData, speaker: e.target.value })}
-                      placeholder="Enter speaker name"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Enter sermon description"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value: Sermon["category"]) => setFormData({ ...formData, category: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sunday-service">Sunday Service</SelectItem>
-                        <SelectItem value="bible-study">Bible Study</SelectItem>
-                        <SelectItem value="special-event">Special Event</SelectItem>
-                        <SelectItem value="youth">Youth</SelectItem>
-                        <SelectItem value="womens">Women's Ministry</SelectItem>
-                        <SelectItem value="mens">Men's Ministry</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value: Sermon["status"]) => setFormData({ ...formData, status: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="published">Published</SelectItem>
-                        <SelectItem value="archived">Archived</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="series">Series (Optional)</Label>
-                    <Select
-                      value={formData.series || "none"}
-                      onValueChange={(value) => setFormData({ ...formData, series: value === "none" ? "" : value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select series" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No Series</SelectItem>
-                        {series.map((s) => (
-                          <SelectItem key={s.id} value={s.name}>
-                            {s.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="scriptureReference">Scripture Reference</Label>
-                    <Input
-                      id="scriptureReference"
-                      value={formData.scriptureReference}
-                      onChange={(e) => setFormData({ ...formData, scriptureReference: e.target.value })}
-                      placeholder="e.g., John 3:16"
-                    />
-                  </div>
-                </div>
-
-                {/* File Uploads */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="video">Video File</Label>
-                    <Input
-                      id="video"
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => setSelectedVideoFile(e.target.files?.[0] || null)}
-                    />
-                    {selectedVideoFile && (
-                      <p className="text-sm text-muted-foreground">Selected: {selectedVideoFile.name}</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="audio">Audio File</Label>
-                    <Input
-                      id="audio"
-                      type="file"
-                      accept="audio/*"
-                      onChange={(e) => setSelectedAudioFile(e.target.files?.[0] || null)}
-                    />
-                    {selectedAudioFile && (
-                      <p className="text-sm text-muted-foreground">Selected: {selectedAudioFile.name}</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="thumbnail">Thumbnail</Label>
-                    <Input
-                      id="thumbnail"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setSelectedThumbnail(e.target.files?.[0] || null)}
-                    />
-                    {selectedThumbnail && (
-                      <p className="text-sm text-muted-foreground">Selected: {selectedThumbnail.name}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Tags */}
-                <div className="space-y-2">
-                  <Label>Tags</Label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {formData.tags?.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                        {tag}
-                        <button onClick={() => removeTag(tag)} className="ml-1 text-xs">
-                          ×
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Add tag"
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault()
-                          addTag((e.target as HTMLInputElement).value)
-                          ;(e.target as HTMLInputElement).value = ""
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="isFeatured"
-                    checked={formData.isFeatured}
-                    onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                    className="rounded"
-                  />
-                  <Label htmlFor="isFeatured">Featured Sermon</Label>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button onClick={handleSaveSermon} className="flex items-center gap-2">
-                    <Save className="h-4 w-4" />
-                    Save Sermon
-                  </Button>
-                  <Button variant="outline" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Filters */}
           <Card>
             <CardContent className="p-4">

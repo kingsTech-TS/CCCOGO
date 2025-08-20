@@ -101,46 +101,57 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Card className="p-4 hover:bg-accent/10 cursor-pointer transition-colors">
-              
-                <div className="flex flex-col items-center text-center gap-2">
-                  <Link href="/admin/sunday-school">
-                  <BookOpen className="h-6 w-6 text-primary" />
-                  <span className="text-sm font-medium">Add Sunday School</span>
-                  </Link>
-                </div>
-                
-              </Card>
-              <Card className="p-4 hover:bg-accent/10 cursor-pointer transition-colors">
-                <div className="flex flex-col items-center text-center gap-2">
-                  <Calendar className="h-6 w-6 text-primary" />
-                  <span className="text-sm font-medium">Create Event</span>
-                </div>
-              </Card>
-              <Card className="p-4 hover:bg-accent/10 cursor-pointer transition-colors">
-                <div className="flex flex-col items-center text-center gap-2">
-                  <Play className="h-6 w-6 text-primary" />
-                  <span className="text-sm font-medium">Upload Sermon</span>
-                </div>
-              </Card>
-              <Card className="p-4 hover:bg-accent/10 cursor-pointer transition-colors">
-                <div className="flex flex-col items-center text-center gap-2">
-                  <Heart className="h-6 w-6 text-primary" />
-                  <span className="text-sm font-medium">View Prayers</span>
-                </div>
-              </Card>
-            </div>
-          </CardContent>
-        </Card>
+       <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" />
+          Quick Actions
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          {/* Add Sunday School */}
+          <Link href="/admin/sunday-school" className="block">
+            <Card className="p-4 hover:bg-accent/10 cursor-pointer transition-colors">
+              <div className="flex flex-col items-center text-center gap-2">
+                <BookOpen className="h-6 w-6 text-primary" />
+                <span className="text-sm font-medium">Add Sunday School</span>
+              </div>
+            </Card>
+          </Link>
+
+          {/* Create Event */}
+          <Link href="/admin/events" className="block">
+            <Card className="p-4 hover:bg-accent/10 cursor-pointer transition-colors">
+              <div className="flex flex-col items-center text-center gap-2">
+                <Calendar className="h-6 w-6 text-primary" />
+                <span className="text-sm font-medium">Create Event</span>
+              </div>
+            </Card>
+          </Link>
+
+          {/* Upload Sermon */}
+          <Link href="/admin/sermons/" className="block">
+            <Card className="p-4 hover:bg-accent/10 cursor-pointer transition-colors">
+              <div className="flex flex-col items-center text-center gap-2">
+                <Play className="h-6 w-6 text-primary" />
+                <span className="text-sm font-medium">Upload Sermon</span>
+              </div>
+            </Card>
+          </Link>
+
+          {/* View Prayers */}
+          <Link href="/admin/prayers" className="block">
+            <Card className="p-4 hover:bg-accent/10 cursor-pointer transition-colors">
+              <div className="flex flex-col items-center text-center gap-2">
+                <Heart className="h-6 w-6 text-primary" />
+                <span className="text-sm font-medium">View Prayers</span>
+              </div>
+            </Card>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
       </div>
     </div>
   )

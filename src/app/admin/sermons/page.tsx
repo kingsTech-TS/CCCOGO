@@ -301,19 +301,21 @@ export default function SermonsArchiveManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Sermons Archive Management</h2>
-          <p className="text-muted-foreground">Upload and manage sermon videos and audio files</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Sermons Archive Management</h2>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Upload and manage sermon videos and audio files
+          </p>
         </div>
-        <Button onClick={handleCreateSermon} className="flex items-center gap-2">
+        <Button onClick={handleCreateSermon} className="flex items-center gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Add Sermon
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -640,7 +642,7 @@ export default function SermonsArchiveManagement() {
           </Card>
 
           {/* Sermons List */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredSermons.map((sermon) => (
               <Card key={sermon.id}>
                 <CardContent className="p-6">

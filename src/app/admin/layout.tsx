@@ -35,7 +35,7 @@ export default function AdminLayout({
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     // Simple authentication check (in production, use proper auth)
-    if (credentials.username === "admin" && credentials.password === "church2024") {
+    if (credentials.username === "admin" && credentials.password === "1234") {
       setIsAuthenticated(true)
     } else {
       alert("Invalid credentials. Use admin/church2024")
@@ -80,7 +80,7 @@ export default function AdminLayout({
               <Button type="submit" className="w-full">
                 Sign In
               </Button>
-              <p className="text-sm text-muted-foreground text-center">Demo: admin / church2024</p>
+              <p className="text-sm text-muted-foreground text-center">Demo: admin / 1234</p>
             </form>
           </CardContent>
         </Card>
@@ -165,7 +165,7 @@ export default function AdminLayout({
               <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
                 <Menu className="h-4 w-4" />
               </Button>
-              <h1 className="text-xl font-bold text-foreground">Grace Community Church Admin</h1>
+              <h1 className="text-xl font-bold text-foreground">Admin User</h1>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Welcome, Admin</span>

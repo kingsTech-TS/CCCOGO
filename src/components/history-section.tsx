@@ -77,7 +77,7 @@ export default function HistorySection() {
               <Link href="/about">
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-yellow-600 hover:to-amber-600 text-white px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group"
+                  className="w-full sm:w-auto bg-primary hover:from-yellow-600 hover:to-amber-600 text-white px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group"
                 >
                   Read More
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />

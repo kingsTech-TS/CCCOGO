@@ -301,7 +301,7 @@ export default function SermonsArchiveManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">Sermons Archive Management</h2>
           <p className="text-sm md:text-base text-muted-foreground">
@@ -588,10 +588,10 @@ export default function SermonsArchiveManagement() {
         </DialogContent>
       </Dialog>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="sermons">Sermons</TabsTrigger>
-          <TabsTrigger value="series">Series</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="flex flex-wrap w-full">
+          <TabsTrigger value="sermons" className="flex-1 sm:flex-none">Sermons</TabsTrigger>
+          <TabsTrigger value="series" className="flex-1 sm:flex-none">Series</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sermons" className="space-y-6">
@@ -610,150 +610,160 @@ export default function SermonsArchiveManagement() {
                     />
                   </div>
                 </div>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
+                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
                     <SelectItem value="sunday-service">Sunday Service</SelectItem>
                     <SelectItem value="bible-study">Bible Study</SelectItem>
                     <SelectItem value="special-event">Special Event</SelectItem>
                     <SelectItem value="youth">Youth</SelectItem>
                     <SelectItem value="womens">Women's Ministry</SelectItem>
                     <SelectItem value="mens">Men's Ministry</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={seriesFilter} onValueChange={setSeriesFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="Series" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Series</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={seriesFilter} onValueChange={setSeriesFilter}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="Series" />
+                    </SelectTrigger>
+                    <SelectContent>
+                     <SelectItem value="all">All Series</SelectItem>
                     {series.map((s) => (
                       <SelectItem key={s.id} value={s.name}>
                         {s.name}
                       </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Sermons List */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredSermons.map((sermon) => (
-              <Card key={sermon.id}>
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-lg">{sermon.title}</h3>
-                          {sermon.isFeatured && (
-                            <Badge className="bg-yellow-500">
-                              <Star className="h-3 w-3 mr-1" />
-                              Featured
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getCategoryColor(sermon.category)}>
-                            {sermon.category.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                          </Badge>
-                          <Badge variant={getStatusColor(sermon.status) as any}>
-                            {sermon.status.charAt(0).toUpperCase() + sermon.status.slice(1)}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggleFeatured(sermon.id)}
-                          className={sermon.isFeatured ? "bg-yellow-100" : ""}
-                        >
-                          <Star className="h-3 w-3" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEditSermon(sermon)}>
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDeleteSermon(sermon.id)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
+<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+  {filteredSermons.map((sermon) => (
+    <Card key={sermon.id} className="w-full">
+      <CardContent className="p-4 sm:p-6">
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-semibold text-base sm:text-lg">{sermon.title}</h3>
+                {sermon.isFeatured && (
+                  <Badge className="bg-yellow-500">
+                    <Star className="h-3 w-3 mr-1" />
+                    Featured
+                  </Badge>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={getCategoryColor(sermon.category)}>
+                  {sermon.category.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                </Badge>
+                <Badge variant={getStatusColor(sermon.status) as any}>
+                  {sermon.status.charAt(0).toUpperCase() + sermon.status.slice(1)}
+                </Badge>
+              </div>
+            </div>
 
-                    {sermon.thumbnailUrl && (
-                      <div className="aspect-video rounded-lg overflow-hidden">
-                        <img
-                          src={sermon.thumbnailUrl || "/placeholder.svg"}
-                          alt={sermon.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1">
-                          <User className="h-4 w-4" />
-                          <span>{sermon.speaker}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(sermon.date).toLocaleDateString()}</span>
-                        </div>
-                        {sermon.duration && (
-                          <div className="flex items-center gap-1">
-                            <Play className="h-4 w-4" />
-                            <span>{sermon.duration}</span>
-                          </div>
-                        )}
-                      </div>
-                      {sermon.series && (
-                        <div className="flex items-center gap-1">
-                          <BookOpen className="h-4 w-4" />
-                          <span>Series: {sermon.series}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">Scripture:</span>
-                        <span>{sermon.scriptureReference}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground line-clamp-2">{sermon.description}</p>
-
-                    <div className="flex flex-wrap gap-1">
-                      {sermon.tags.slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {sermon.tags.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{sermon.tags.length - 3} more
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <div className="flex gap-4">
-                        <span>{sermon.viewCount} views</span>
-                        <span>{sermon.downloadCount} downloads</span>
-                      </div>
-                      <div className="flex gap-2">
-                        {sermon.videoUrl && <Video className="h-4 w-4" />}
-                        {sermon.audioUrl && <Music className="h-4 w-4" />}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {/* Action Buttons */}
+            <div className="flex gap-2 self-start">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toggleFeatured(sermon.id)}
+                className={sermon.isFeatured ? "bg-yellow-100" : ""}
+              >
+                <Star className="h-3 w-3" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleEditSermon(sermon)}>
+                <Edit className="h-3 w-3" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleDeleteSermon(sermon.id)}>
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
+
+          {/* Thumbnail */}
+          {sermon.thumbnailUrl && (
+            <div className="aspect-video rounded-lg overflow-hidden">
+              <img
+                src={sermon.thumbnailUrl || "/placeholder.svg"}
+                alt={sermon.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          {/* Meta Info */}
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-1">
+                <User className="h-4 w-4" />
+                <span>{sermon.speaker}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                <span>{new Date(sermon.date).toLocaleDateString()}</span>
+              </div>
+              {sermon.duration && (
+                <div className="flex items-center gap-1">
+                  <Play className="h-4 w-4" />
+                  <span>{sermon.duration}</span>
+                </div>
+              )}
+            </div>
+            {sermon.series && (
+              <div className="flex items-center gap-1">
+                <BookOpen className="h-4 w-4" />
+                <span>Series: {sermon.series}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <span className="font-medium">Scripture:</span>
+              <span>{sermon.scriptureReference}</span>
+            </div>
+          </div>
+
+          {/* Description */}
+          <p className="text-sm text-muted-foreground line-clamp-2">{sermon.description}</p>
+
+          {/* Tags */}
+          <div className="flex flex-wrap gap-1">
+            {sermon.tags.slice(0, 3).map((tag) => (
+              <Badge key={tag} variant="outline" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+            {sermon.tags.length > 3 && (
+              <Badge variant="outline" className="text-xs">
+                +{sermon.tags.length - 3} more
+              </Badge>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground gap-2">
+            <div className="flex gap-4">
+              <span>{sermon.viewCount} views</span>
+              <span>{sermon.downloadCount} downloads</span>
+            </div>
+            <div className="flex gap-2">
+              {sermon.videoUrl && <Video className="h-4 w-4" />}
+              {sermon.audioUrl && <Music className="h-4 w-4" />}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  ))}
+</div>
 
           {filteredSermons.length === 0 && (
             <Card>
@@ -768,7 +778,7 @@ export default function SermonsArchiveManagement() {
 
         <TabsContent value="series" className="space-y-6">
           {/* Series Management */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
             {series.map((s) => (
               <Card key={s.id}>
                 <CardContent className="p-6">

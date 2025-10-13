@@ -1,25 +1,25 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Heart, Send, CheckCircle } from "lucide-react"
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Heart, Send, CheckCircle } from "lucide-react";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../../lib/firebase";
 
 interface PrayerRequest {
-  id: string
-  name: string
-  email: string
-  phone: string
-  category: string
-  request: string
-  isPublic: boolean
-  isUrgent: boolean
-  submittedAt: Date
+  id?: string;
+  name: string;
+  email: string;
+  phone: string;
+  category: string;
+  request: string;
+  isPublic: boolean;
+  isUrgent: boolean;
+  submittedAt?: Date;
 }
 
 export function PrayerRequestForm() {
@@ -31,92 +31,69 @@ export function PrayerRequestForm() {
     request: "",
     isPublic: false,
     isUrgent: false,
-  })
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-
-  // Mock storage for prayer requests (in real app, this would be a database)
-  const [prayerRequests, setPrayerRequests] = useState<PrayerRequest[]>([])
+  });
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const categories = [
     "Health & Healing",
-    "Family & Relationships",
-    "Work & Finances",
-    "Spiritual Growth",
+    "Family",
+    "Work",
+    "Spiritual",
     "Grief & Loss",
-    "Guidance & Direction",
-    "Thanksgiving & Praise",
+    "Guidance",
+    "Financial",
     "Other",
-  ]
+  ];
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Enter a valid email";
+    if (!formData.category) newErrors.category = "Select a category";
+    if (!formData.request.trim()) newErrors.request = "Prayer request is required";
+    else if (formData.request.trim().length < 10)
+      newErrors.request = "Please provide more details";
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required"
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address"
-    }
-
-    if (!formData.category) {
-      newErrors.category = "Please select a category"
-    }
-
-    if (!formData.request.trim()) {
-      newErrors.request = "Prayer request is required"
-    } else if (formData.request.trim().length < 10) {
-      newErrors.request = "Please provide more details about your prayer request"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    if (!validateForm()) return;
 
-    if (!validateForm()) {
-      return
+    setIsSubmitting(true);
+    try {
+      await addDoc(collection(db, "prayerRequest"), {
+        ...formData,
+        submittedAt: serverTimestamp(),
+      });
+
+      setIsSubmitted(true);
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        category: "",
+        request: "",
+        isPublic: false,
+        isUrgent: false,
+      });
+    } catch (error) {
+      console.error("Error submitting prayer request:", error);
+      alert("Something went wrong while submitting your prayer request.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(true)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const newRequest: PrayerRequest = {
-      id: Date.now().toString(),
-      ...formData,
-      submittedAt: new Date(),
-    }
-
-    setPrayerRequests((prev) => [newRequest, ...prev])
-    setIsSubmitted(true)
-    setIsSubmitting(false)
-
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      category: "",
-      request: "",
-      isPublic: false,
-      isUrgent: false,
-    })
-  }
+  };
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
-    }
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
 
   if (isSubmitted) {
     return (
@@ -127,10 +104,12 @@ export function PrayerRequestForm() {
               <div className="bg-green-100 p-4 rounded-full inline-flex mb-6">
                 <CheckCircle className="h-12 w-12 text-green-600" />
               </div>
-              <h2 className="font-serif text-2xl font-bold text-gray-900 mb-4">Prayer Request Submitted</h2>
+              <h2 className="font-serif text-2xl font-bold text-gray-900 mb-4">
+                Prayer Request Submitted
+              </h2>
               <p className="text-gray-600 mb-6">
-                Thank you for sharing your prayer request with us. Our prayer team will be lifting you up in prayer. You
-                are not alone in this journey.
+                Thank you for sharing your prayer request with us. Our prayer team will
+                be lifting you up in prayer. You are not alone in this journey.
               </p>
               <div className="space-y-3 text-sm text-gray-500 mb-6">
                 <p>• Our pastoral team reviews all prayer requests</p>
@@ -144,7 +123,7 @@ export function PrayerRequestForm() {
           </Card>
         </div>
       </section>
-    )
+    );
   }
 
   return (
@@ -157,17 +136,18 @@ export function PrayerRequestForm() {
               <CardContent className="p-8">
                 <div className="flex items-center mb-6">
                   <Heart className="h-6 w-6 text-primary mr-2" />
-                  <h2 className="font-serif text-2xl font-bold text-gray-900">Share Your Prayer Request</h2>
+                  <h2 className="font-serif text-2xl font-bold text-gray-900">
+                    Share Your Prayer Request
+                  </h2>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Full Name *
                       </label>
                       <Input
-                        id="name"
                         value={formData.name}
                         onChange={(e) => handleInputChange("name", e.target.value)}
                         className={errors.name ? "border-red-500" : ""}
@@ -177,11 +157,10 @@ export function PrayerRequestForm() {
                     </div>
 
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Email Address *
                       </label>
                       <Input
-                        id="email"
                         type="email"
                         value={formData.email}
                         onChange={(e) => handleInputChange("email", e.target.value)}
@@ -194,11 +173,10 @@ export function PrayerRequestForm() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Phone Number (Optional)
                       </label>
                       <Input
-                        id="phone"
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => handleInputChange("phone", e.target.value)}
@@ -207,11 +185,10 @@ export function PrayerRequestForm() {
                     </div>
 
                     <div>
-                      <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Prayer Category *
                       </label>
                       <select
-                        id="category"
                         value={formData.category}
                         onChange={(e) => handleInputChange("category", e.target.value)}
                         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
@@ -219,9 +196,9 @@ export function PrayerRequestForm() {
                         }`}
                       >
                         <option value="">Select a category</option>
-                        {categories.map((category) => (
-                          <option key={category} value={category}>
-                            {category}
+                        {categories.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
                           </option>
                         ))}
                       </select>
@@ -230,11 +207,10 @@ export function PrayerRequestForm() {
                   </div>
 
                   <div>
-                    <label htmlFor="request" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Prayer Request *
                     </label>
                     <Textarea
-                      id="request"
                       value={formData.request}
                       onChange={(e) => handleInputChange("request", e.target.value)}
                       className={errors.request ? "border-red-500" : ""}
@@ -247,22 +223,20 @@ export function PrayerRequestForm() {
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="isPublic"
                         checked={formData.isPublic}
                         onCheckedChange={(checked) => handleInputChange("isPublic", checked as boolean)}
                       />
-                      <label htmlFor="isPublic" className="text-sm text-gray-700">
+                      <label className="text-sm text-gray-700">
                         I'm comfortable sharing this request with the church family (first name only)
                       </label>
                     </div>
 
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="isUrgent"
                         checked={formData.isUrgent}
                         onCheckedChange={(checked) => handleInputChange("isUrgent", checked as boolean)}
                       />
-                      <label htmlFor="isUrgent" className="text-sm text-gray-700">
+                      <label className="text-sm text-gray-700">
                         This is an urgent prayer request
                       </label>
                     </div>
@@ -295,19 +269,19 @@ export function PrayerRequestForm() {
                 <h3 className="font-serif text-lg font-bold text-gray-900 mb-4">How We Pray</h3>
                 <ul className="space-y-3 text-sm text-gray-600">
                   <li className="flex items-start">
-                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3"></span>
                     Our pastoral team prays over every request
                   </li>
                   <li className="flex items-start">
-                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3"></span>
                     Prayer warriors meet weekly to intercede
                   </li>
                   <li className="flex items-start">
-                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3"></span>
                     Urgent requests receive immediate attention
                   </li>
                   <li className="flex items-start">
-                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3"></span>
                     All requests are kept confidential
                   </li>
                 </ul>
@@ -322,15 +296,11 @@ export function PrayerRequestForm() {
                 </p>
                 <div className="space-y-2 text-sm">
                   <p>
-                    <strong>Prayer Hotline:</strong>
-                    <br />
-                    <a href="tel:(555)123-PRAY" className="text-primary hover:underline">
-                      (555) 123-PRAY
-                    </a>
+                    <strong>Prayer Hotline:</strong><br />
+                    <a href="tel:(555)123-PRAY" className="text-primary hover:underline">(555) 123-PRAY</a>
                   </p>
                   <p>
-                    <strong>Email:</strong>
-                    <br />
+                    <strong>Email:</strong><br />
                     <a href="mailto:prayer@gracecommunity.org" className="text-primary hover:underline">
                       prayer@gracecommunity.org
                     </a>
@@ -342,5 +312,5 @@ export function PrayerRequestForm() {
         </div>
       </div>
     </section>
-  )
+  );
 }

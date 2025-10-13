@@ -1,6 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import toast from "react-hot-toast"
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  serverTimestamp,
+} from "firebase/firestore"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,10 +20,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Trash2, Save, X, BookOpen } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { db } from "../../../../lib/firebase"
 
 interface SundaySchoolLesson {
   id: string
-  week: number
   date: string
   topic: string
   memoryVerse: string
@@ -23,62 +33,34 @@ interface SundaySchoolLesson {
   questions: string[]
   teacher: string
   status: "draft" | "published"
+  createdAt?: any
+  updatedAt?: any
 }
 
-const initialLessons: SundaySchoolLesson[] = [
-  {
-    id: "1",
-    week: 1,
-    date: "2024-01-07",
-    topic: "Walking in Faith",
-    memoryVerse: "Now faith is confidence in what we hope for and assurance about what we do not see.",
-    verseReference: "Hebrews 11:1",
-    mainContent:
-      "Faith is the foundation of our Christian walk. It's not just believing in God's existence, but trusting in His character and promises. When we walk by faith, we demonstrate our confidence in God's goodness and sovereignty, even when circumstances seem uncertain. This lesson explores how biblical figures like Abraham, Moses, and David exemplified faith in their daily lives, and how we can apply these same principles today. Faith requires action - it's not passive belief but active trust that transforms how we live, make decisions, and respond to challenges.",
-    bibleReferences: ["Romans 10:17", "2 Corinthians 5:7", "James 2:17", "1 Peter 1:7"],
-    questions: [
-      "How does faith differ from mere belief or hope?",
-      "What are some practical ways we can exercise faith in our daily lives?",
-      "How can we strengthen our faith during difficult times?",
-      "What role does God's Word play in building our faith?",
-    ],
-    teacher: "Pastor Johnson",
-    status: "published",
-  },
-  {
-    id: "2",
-    week: 2,
-    date: "2024-01-14",
-    topic: "The Power of Prayer",
-    memoryVerse:
-      "Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.",
-    verseReference: "Philippians 4:6",
-    mainContent:
-      "Prayer is our direct line of communication with God. It's not just asking for things, but developing a relationship with our Heavenly Father. Through prayer, we align our hearts with God's will, find peace in His presence, and experience His power in our lives. This lesson examines different types of prayer - adoration, confession, thanksgiving, and supplication - and how Jesus taught us to pray through the Lord's Prayer.",
-    bibleReferences: ["Matthew 6:9-13", "1 Thessalonians 5:17", "James 5:16", "1 John 5:14"],
-    questions: [
-      "What are the different elements of effective prayer?",
-      "How does prayer change us, not just our circumstances?",
-      "What can we learn from Jesus' prayer life?",
-      "How can we maintain consistency in our prayer life?",
-    ],
-    teacher: "Sister Mary",
-    status: "published",
-  },
-]
-
 export default function SundaySchoolManagement() {
-  const [lessons, setLessons] = useState<SundaySchoolLesson[]>(initialLessons)
+  const [lessons, setLessons] = useState<SundaySchoolLesson[]>([])
   const [editingLesson, setEditingLesson] = useState<SundaySchoolLesson | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [formData, setFormData] = useState<Partial<SundaySchoolLesson>>({})
   const [isModalOpen, setIsModalOpen] = useState(false)
 
+  // ✅ Real-time Firestore listener
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "sundaySchool"), (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as SundaySchoolLesson[]
+      setLessons(data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)))
+    })
+    return () => unsubscribe()
+  }, [])
+
+  // ✅ Create new lesson
   const handleCreate = () => {
     setIsCreating(true)
     setEditingLesson(null)
     setFormData({
-      week: lessons.length + 1,
       date: "",
       topic: "",
       memoryVerse: "",
@@ -92,6 +74,7 @@ export default function SundaySchoolManagement() {
     setIsModalOpen(true)
   }
 
+  // ✅ Edit lesson
   const handleEdit = (lesson: SundaySchoolLesson) => {
     setEditingLesson(lesson)
     setIsCreating(false)
@@ -99,23 +82,34 @@ export default function SundaySchoolManagement() {
     setIsModalOpen(true)
   }
 
-  const handleSave = () => {
-    if (isCreating) {
-      const newLesson: SundaySchoolLesson = {
-        ...formData,
-        id: Date.now().toString(),
-        bibleReferences: formData.bibleReferences || [],
-        questions: formData.questions || [],
-      } as SundaySchoolLesson
-      setLessons([...lessons, newLesson])
-    } else if (editingLesson) {
-      setLessons(
-        lessons.map((lesson) => (lesson.id === editingLesson.id ? ({ ...formData } as SundaySchoolLesson) : lesson)),
-      )
+  // ✅ Save lesson (create or update Firestore)
+  const handleSave = async () => {
+    const collectionRef = collection(db, "sundaySchool")
+    const toastId = toast.loading("Saving lesson...")
+
+    try {
+      if (isCreating) {
+        await addDoc(collectionRef, {
+          ...formData,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+        toast.success("Lesson created successfully ✅", { id: toastId })
+      } else if (editingLesson) {
+        const docRef = doc(db, "sundaySchool", editingLesson.id)
+        await updateDoc(docRef, {
+          ...formData,
+          updatedAt: serverTimestamp(),
+        })
+        toast.success("Lesson updated successfully ✏️", { id: toastId })
+      }
+      handleCancel()
+    } catch (error) {
+      toast.error("Error saving lesson ❌", { id: toastId })
     }
-    handleCancel()
   }
 
+  // ✅ Cancel action
   const handleCancel = () => {
     setIsCreating(false)
     setEditingLesson(null)
@@ -123,18 +117,41 @@ export default function SundaySchoolManagement() {
     setIsModalOpen(false)
   }
 
+  // ✅ Delete lesson
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this lesson?")) {
-      setLessons(lessons.filter((lesson) => lesson.id !== id))
-    }
+    toast(
+      (t) => (
+        <div className="flex flex-col space-y-2">
+          <p className="text-sm font-medium">Are you sure you want to delete this lesson?</p>
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="bg-red-600 text-white hover:bg-red-500"
+              onClick={async () => {
+                await deleteDoc(doc(db, "sundaySchool", id))
+                toast.dismiss(t.id)
+                toast.success("Lesson deleted successfully 🗑️")
+              }}
+            >
+              Yes, Delete
+            </Button>
+          </div>
+        </div>
+      ),
+      { duration: 8000 }
+    )
   }
 
-  const addBibleReference = () => {
-    setFormData({
-      ...formData,
-      bibleReferences: [...(formData.bibleReferences || []), ""],
-    })
-  }
+  // ✅ Bible references + questions controls
+  const addBibleReference = () =>
+    setFormData({ ...formData, bibleReferences: [...(formData.bibleReferences || []), ""] })
 
   const updateBibleReference = (index: number, value: string) => {
     const refs = [...(formData.bibleReferences || [])]
@@ -148,12 +165,8 @@ export default function SundaySchoolManagement() {
     setFormData({ ...formData, bibleReferences: refs })
   }
 
-  const addQuestion = () => {
-    setFormData({
-      ...formData,
-      questions: [...(formData.questions || []), ""],
-    })
-  }
+  const addQuestion = () =>
+    setFormData({ ...formData, questions: [...(formData.questions || []), ""] })
 
   const updateQuestion = (index: number, value: string) => {
     const questions = [...(formData.questions || [])]
@@ -181,155 +194,213 @@ export default function SundaySchoolManagement() {
         </Button>
       </div>
 
-      {/* Create/Edit Form */}
+           {/* Lessons list */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {lessons.map((lesson) => {
+          // Convert Firestore timestamps safely
+          const createdAt =
+            lesson.createdAt?.toDate?.().toLocaleString?.() ??
+            (lesson.createdAt?.seconds
+              ? new Date(lesson.createdAt.seconds * 1000).toLocaleString()
+              : "—");
+
+          const updatedAt =
+            lesson.updatedAt?.toDate?.().toLocaleString?.() ??
+            (lesson.updatedAt?.seconds
+              ? new Date(lesson.updatedAt.seconds * 1000).toLocaleString()
+              : "—");
+
+          return (
+            <Card key={lesson.id} className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                  {lesson.topic || "Untitled Lesson"}
+                  <Badge
+                    variant={
+                      lesson.status === "published" ? "default" : "secondary"
+                    }
+                  >
+                    {lesson.status}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p>
+                  <strong>Date:</strong>{" "}
+                  {lesson.date
+                    ? lesson.date
+                    : createdAt !== "—"
+                    ? createdAt
+                    : "N/A"}
+                </p>
+                <p>
+                  <strong>Memory Verse:</strong>{" "}
+                  {lesson.memoryVerse || "—"}
+                </p>
+                <p className="line-clamp-3">
+                  {lesson.mainContent || "No content yet."}
+                </p>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Created: {createdAt}</span>
+                  <span>Updated: {updatedAt}</span>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEdit(lesson)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleDelete(lesson.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Modal for Create/Edit */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
+            <DialogTitle>
               {isCreating ? "Create New Lesson" : "Edit Lesson"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="week">Week Number</Label>
-                <Select
-                  value={formData.week?.toString()}
-                  onValueChange={(value) => setFormData({ ...formData, week: Number.parseInt(value) })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select week" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Week 1</SelectItem>
-                    <SelectItem value="2">Week 2</SelectItem>
-                    <SelectItem value="3">Week 3</SelectItem>
-                    <SelectItem value="4">Week 4</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="teacher">Teacher</Label>
-                <Input
-                  id="teacher"
-                  value={formData.teacher}
-                  onChange={(e) => setFormData({ ...formData, teacher: e.target.value })}
-                  placeholder="Teacher name"
-                />
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="topic">Lesson Topic</Label>
+          <div className="space-y-4">
+            {/* Topic */}
+            <div>
+              <Label>Topic</Label>
               <Input
-                id="topic"
-                value={formData.topic}
-                onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                placeholder="Enter lesson topic"
+                value={formData.topic || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, topic: e.target.value })
+                }
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="memoryVerse">Memory Verse</Label>
-                <Textarea
-                  id="memoryVerse"
-                  value={formData.memoryVerse}
-                  onChange={(e) => setFormData({ ...formData, memoryVerse: e.target.value })}
-                  placeholder="Enter memory verse"
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="verseReference">Verse Reference</Label>
-                <Input
-                  id="verseReference"
-                  value={formData.verseReference}
-                  onChange={(e) => setFormData({ ...formData, verseReference: e.target.value })}
-                  placeholder="e.g., John 3:16"
-                />
-              </div>
+            {/* Date */}
+            <div>
+              <Label>Date</Label>
+              <Input
+                type="date"
+                value={formData.date || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, date: e.target.value })
+                }
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="mainContent">Main Content (The Word)</Label>
+            {/* Memory Verse */}
+            <div>
+              <Label>Memory Verse</Label>
               <Textarea
-                id="mainContent"
-                value={formData.mainContent}
-                onChange={(e) => setFormData({ ...formData, mainContent: e.target.value })}
-                placeholder="Enter the main lesson content"
-                rows={6}
+                value={formData.memoryVerse || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, memoryVerse: e.target.value })
+                }
+              />
+            </div>
+
+            {/* Main Content */}
+            <div>
+              <Label>Main Content</Label>
+              <Textarea
+                rows={5}
+                value={formData.mainContent || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, mainContent: e.target.value })
+                }
               />
             </div>
 
             {/* Bible References */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Bible References</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addBibleReference}>
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add Reference
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {formData.bibleReferences?.map((ref, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      value={ref}
-                      onChange={(e) => updateBibleReference(index, e.target.value)}
-                      placeholder="e.g., Romans 8:28"
-                    />
-                    <Button type="button" variant="outline" size="sm" onClick={() => removeBibleReference(index)}>
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+            <div>
+              <Label>Bible References</Label>
+              {(formData.bibleReferences || []).map((ref, i) => (
+                <div key={i} className="flex gap-2 mt-2">
+                  <Input
+                    value={ref}
+                    onChange={(e) => updateBibleReference(i, e.target.value)}
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => removeBibleReference(i)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                onClick={addBibleReference}
+                className="mt-2 flex items-center gap-1"
+                variant="secondary"
+              >
+                <Plus className="h-4 w-4" /> Add Reference
+              </Button>
             </div>
 
             {/* Questions */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Discussion Questions</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addQuestion}>
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add Question
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {formData.questions?.map((question, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      value={question}
-                      onChange={(e) => updateQuestion(index, e.target.value)}
-                      placeholder="Enter discussion question"
-                    />
-                    <Button type="button" variant="outline" size="sm" onClick={() => removeQuestion(index)}>
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+            <div>
+              <Label>Questions</Label>
+              {(formData.questions || []).map((q, i) => (
+                <div key={i} className="flex gap-2 mt-2">
+                  <Input
+                    value={q}
+                    onChange={(e) => updateQuestion(i, e.target.value)}
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => removeQuestion(i)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                onClick={addQuestion}
+                className="mt-2 flex items-center gap-1"
+                variant="secondary"
+              >
+                <Plus className="h-4 w-4" /> Add Question
+              </Button>
             </div>
 
-            <div className="space-y-2">
+            {/* Teacher */}
+            <div>
+              <Label>Teacher</Label>
+              <Input
+                value={formData.teacher || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, teacher: e.target.value })
+                }
+              />
+            </div>
+
+            {/* Status */}
+            <div>
               <Label>Status</Label>
               <Select
-                value={formData.status}
-                onValueChange={(value: "draft" | "published") => setFormData({ ...formData, status: value })}
+                value={formData.status || "draft"}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    status: value as "draft" | "published",
+                  })
+                }
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Draft</SelectItem>
@@ -338,70 +409,23 @@ export default function SundaySchoolManagement() {
               </Select>
             </div>
 
-            <div className="flex gap-2">
-              <Button onClick={handleSave} className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                Save Lesson
-              </Button>
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={handleCancel}>
                 Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                Save
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Lessons List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Existing Lessons</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {lessons.map((lesson) => (
-              <div key={lesson.id} className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">{lesson.topic}</h3>
-                      <Badge variant={lesson.status === "published" ? "default" : "secondary"}>{lesson.status}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Week {lesson.week} • {new Date(lesson.date).toLocaleDateString()} • {lesson.teacher}
-                    </p>
-                    <p className="text-sm font-medium text-primary">
-                      {lesson.verseReference}: "{lesson.memoryVerse.substring(0, 100)}..."
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(lesson)}>
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(lesson.id)}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  <p>{lesson.mainContent.substring(0, 200)}...</p>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {lesson.bibleReferences.slice(0, 3).map((ref, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {ref}
-                    </Badge>
-                  ))}
-                  {lesson.bibleReferences.length > 3 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{lesson.bibleReferences.length - 3} more
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

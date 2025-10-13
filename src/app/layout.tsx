@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Playfair_Display, Source_Sans_3 as Source_Sans_Pro, DM_Sans } from "next/font/google"
 import "./globals.css"
+import { Toaster } from "react-hot-toast"
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -38,7 +39,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${playfair.variable} ${sourceSans.variable} ${dmSans.variable} antialiased`}>
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        {children}
+
+        {/* ✅ React Hot Toast Toaster — global notifications */}
+        <Toaster
+          position="top-right"
+          reverseOrder={false}
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: "#fff",
+              color: "#000",
+              borderRadius: "8px",
+              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+            },
+          }}
+        />
+      </body>
     </html>
   )
 }

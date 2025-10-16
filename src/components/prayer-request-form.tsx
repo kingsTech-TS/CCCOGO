@@ -7,20 +7,45 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Heart, Send, CheckCircle } from "lucide-react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 
 interface PrayerRequest {
   id?: string;
   name: string;
   email: string;
-  phone: string;
-  category: string;
+  phone?: string;
+  category:
+    | "personal"
+    | "family"
+    | "health"
+    | "financial"
+    | "Guidance"
+    | "Work"
+    | "spiritual"
+    | "Education"
+    | "other";
   request: string;
-  isPublic: boolean;
   isUrgent: boolean;
-  submittedAt?: Date;
+  isConfidential: boolean;
+  status: "new" | "praying" | "answered" | "closed";
+  submittedAt?: string;
 }
+
+// Helper: map form categories to dashboard categories
+const normalizeCategory = (category: string): PrayerRequest["category"] => {
+  const map: Record<string, PrayerRequest["category"]> = {
+    "Health & Healing": "health",
+    Family: "family",
+    Work: "Work",
+    Spiritual: "spiritual",
+    "Grief & Loss": "personal",
+    Guidance: "Guidance",
+    Financial: "financial",
+    Other: "other",
+  };
+  return map[category] || "other";
+};
 
 export function PrayerRequestForm() {
   const [formData, setFormData] = useState({
@@ -51,7 +76,8 @@ export function PrayerRequestForm() {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) newErrors.name = "Name is required";
     if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Enter a valid email";
+    else if (!/\S+@\S+\.\S+/.test(formData.email))
+      newErrors.email = "Enter a valid email";
     if (!formData.category) newErrors.category = "Select a category";
     if (!formData.request.trim()) newErrors.request = "Prayer request is required";
     else if (formData.request.trim().length < 10)
@@ -68,8 +94,15 @@ export function PrayerRequestForm() {
     setIsSubmitting(true);
     try {
       await addDoc(collection(db, "prayerRequest"), {
-        ...formData,
-        submittedAt: serverTimestamp(),
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || "",
+        category: normalizeCategory(formData.category),
+        request: formData.request,
+        isUrgent: formData.isUrgent,
+        isConfidential: !formData.isPublic, // Dashboard expects this
+        status: "new", // Default status for new submissions
+        submittedAt: new Date().toISOString(), // Consistent format with dashboard
       });
 
       setIsSubmitted(true);
@@ -116,7 +149,10 @@ export function PrayerRequestForm() {
                 <p>• Urgent requests are prioritized for immediate prayer</p>
                 <p>• We respect your privacy and confidentiality</p>
               </div>
-              <Button onClick={() => setIsSubmitted(false)} className="bg-primary hover:bg-primary/90">
+              <Button
+                onClick={() => setIsSubmitted(false)}
+                className="bg-primary hover:bg-primary/90"
+              >
                 Submit Another Request
               </Button>
             </CardContent>
@@ -149,11 +185,15 @@ export function PrayerRequestForm() {
                       </label>
                       <Input
                         value={formData.name}
-                        onChange={(e) => handleInputChange("name", e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("name", e.target.value)
+                        }
                         className={errors.name ? "border-red-500" : ""}
                         placeholder="Enter your full name"
                       />
-                      {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                      {errors.name && (
+                        <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                      )}
                     </div>
 
                     <div>
@@ -163,11 +203,15 @@ export function PrayerRequestForm() {
                       <Input
                         type="email"
                         value={formData.email}
-                        onChange={(e) => handleInputChange("email", e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("email", e.target.value)
+                        }
                         className={errors.email ? "border-red-500" : ""}
                         placeholder="Enter your email"
                       />
-                      {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                      {errors.email && (
+                        <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                      )}
                     </div>
                   </div>
 
@@ -179,7 +223,9 @@ export function PrayerRequestForm() {
                       <Input
                         type="tel"
                         value={formData.phone}
-                        onChange={(e) => handleInputChange("phone", e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("phone", e.target.value)
+                        }
                         placeholder="Enter your phone number"
                       />
                     </div>
@@ -190,7 +236,9 @@ export function PrayerRequestForm() {
                       </label>
                       <select
                         value={formData.category}
-                        onChange={(e) => handleInputChange("category", e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("category", e.target.value)
+                        }
                         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                           errors.category ? "border-red-500" : "border-gray-300"
                         }`}
@@ -202,7 +250,11 @@ export function PrayerRequestForm() {
                           </option>
                         ))}
                       </select>
-                      {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
+                      {errors.category && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.category}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -212,29 +264,40 @@ export function PrayerRequestForm() {
                     </label>
                     <Textarea
                       value={formData.request}
-                      onChange={(e) => handleInputChange("request", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("request", e.target.value)
+                      }
                       className={errors.request ? "border-red-500" : ""}
                       placeholder="Please share your prayer request with us..."
                       rows={5}
                     />
-                    {errors.request && <p className="text-red-500 text-sm mt-1">{errors.request}</p>}
+                    {errors.request && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.request}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         checked={formData.isPublic}
-                        onCheckedChange={(checked) => handleInputChange("isPublic", checked as boolean)}
+                        onCheckedChange={(checked) =>
+                          handleInputChange("isPublic", checked as boolean)
+                        }
                       />
                       <label className="text-sm text-gray-700">
-                        I'm comfortable sharing this request with the church family (first name only)
+                        I'm comfortable sharing this request with the church family
+                        (first name only)
                       </label>
                     </div>
 
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         checked={formData.isUrgent}
-                        onCheckedChange={(checked) => handleInputChange("isUrgent", checked as boolean)}
+                        onCheckedChange={(checked) =>
+                          handleInputChange("isUrgent", checked as boolean)
+                        }
                       />
                       <label className="text-sm text-gray-700">
                         This is an urgent prayer request
@@ -266,7 +329,9 @@ export function PrayerRequestForm() {
           <div className="space-y-6">
             <Card className="bg-accent/50">
               <CardContent className="p-6">
-                <h3 className="font-serif text-lg font-bold text-gray-900 mb-4">How We Pray</h3>
+                <h3 className="font-serif text-lg font-bold text-gray-900 mb-4">
+                  How We Pray
+                </h3>
                 <ul className="space-y-3 text-sm text-gray-600">
                   <li className="flex items-start">
                     <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3"></span>
@@ -290,18 +355,31 @@ export function PrayerRequestForm() {
 
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-serif text-lg font-bold text-gray-900 mb-4">Need Immediate Prayer?</h3>
+                <h3 className="font-serif text-lg font-bold text-gray-900 mb-4">
+                  Need Immediate Prayer?
+                </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  If you need someone to pray with you right now, don't hesitate to reach out.
+                  If you need someone to pray with you right now, don't hesitate to reach
+                  out.
                 </p>
                 <div className="space-y-2 text-sm">
                   <p>
-                    <strong>Prayer Hotline:</strong><br />
-                    <a href="tel:(555)123-PRAY" className="text-primary hover:underline">(555) 123-PRAY</a>
+                    <strong>Prayer Hotline:</strong>
+                    <br />
+                    <a
+                      href="tel:(555)123-PRAY"
+                      className="text-primary hover:underline"
+                    >
+                      (555) 123-PRAY
+                    </a>
                   </p>
                   <p>
-                    <strong>Email:</strong><br />
-                    <a href="mailto:prayer@gracecommunity.org" className="text-primary hover:underline">
+                    <strong>Email:</strong>
+                    <br />
+                    <a
+                      href="mailto:prayer@gracecommunity.org"
+                      className="text-primary hover:underline"
+                    >
                       prayer@gracecommunity.org
                     </a>
                   </p>

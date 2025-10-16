@@ -7,8 +7,23 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import { Heart, Search, CheckCircle, Clock, AlertCircle, EyeOff, MessageSquare } from "lucide-react"
-import { collection, getDocs, updateDoc, doc, query, orderBy } from "firebase/firestore"
+import {
+  Heart,
+  Search,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  EyeOff,
+  MessageSquare,
+} from "lucide-react"
+import {
+  collection,
+  updateDoc,
+  doc,
+  query,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore"
 import toast, { Toaster } from "react-hot-toast"
 import { db } from "../../../../lib/firebase"
 
@@ -41,30 +56,40 @@ export default function PrayerRequestsDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [loading, setLoading] = useState(true)
+  const [hasShownToast, setHasShownToast] = useState(false)
 
-  // Fetch data from Firestore
+  // ✅ Real-time listener with onSnapshot
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const q = query(collection(db, "prayerRequest"), orderBy("submittedAt", "desc"))
-        const snapshot = await getDocs(q)
+    const q = query(collection(db, "prayerRequest"), orderBy("submittedAt", "desc"))
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as PrayerRequest[]
+
         setRequests(data)
         setLoading(false)
-        toast.success("Prayer requests loaded successfully")
-      } catch (error) {
+
+        if (!hasShownToast) {
+          toast.success("Prayer requests loaded successfully")
+          setHasShownToast(true)
+        }
+      },
+      (error) => {
         console.error("Error fetching prayer requests:", error)
         toast.error("Failed to load prayer requests")
         setLoading(false)
       }
-    }
+    )
 
-    fetchRequests()
-  }, [])
+    // Cleanup listener on unmount
+    return () => unsubscribe()
+  }, [hasShownToast])
 
+  // 🔍 Filtering logic
   const filteredRequests = requests.filter((request) => {
     const matchesSearch =
       request.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,13 +99,11 @@ export default function PrayerRequestsDashboard() {
     return matchesSearch && matchesStatus && matchesCategory
   })
 
+  // ⚡ Update status with toast
   const updateRequestStatus = async (id: string, status: PrayerRequest["status"]) => {
     try {
       const requestRef = doc(db, "prayerRequest", id)
       await updateDoc(requestRef, { status })
-      setRequests((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status } : r))
-      )
       toast.success(`Status updated to "${status}"`)
     } catch (error) {
       console.error("Error updating status:", error)
@@ -88,6 +111,7 @@ export default function PrayerRequestsDashboard() {
     }
   }
 
+  // 🔹 UI helpers
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "new":
@@ -156,7 +180,9 @@ export default function PrayerRequestsDashboard() {
 
       {/* Header */}
       <div className="text-center md:text-left">
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground">Prayer Requests Dashboard</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+          Prayer Requests Dashboard
+        </h2>
         <p className="text-muted-foreground text-sm md:text-base">
           Manage and view prayer requests from the community
         </p>
@@ -164,11 +190,51 @@ export default function PrayerRequestsDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <Card><CardContent className="p-4 flex items-center gap-3"><Heart className="h-5 w-5 text-primary" /><div><p className="text-xs font-medium">Total</p><p className="text-lg font-bold">{stats.total}</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><AlertCircle className="h-5 w-5 text-destructive" /><div><p className="text-xs font-medium">New</p><p className="text-lg font-bold">{stats.new}</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><Clock className="h-5 w-5 text-primary" /><div><p className="text-xs font-medium">Praying</p><p className="text-lg font-bold">{stats.praying}</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><CheckCircle className="h-5 w-5 text-secondary" /><div><p className="text-xs font-medium">Answered</p><p className="text-lg font-bold">{stats.answered}</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><AlertCircle className="h-5 w-5 text-accent" /><div><p className="text-xs font-medium">Urgent</p><p className="text-lg font-bold">{stats.urgent}</p></div></CardContent></Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <Heart className="h-5 w-5 text-primary" />
+            <div>
+              <p className="text-xs font-medium">Total</p>
+              <p className="text-lg font-bold">{stats.total}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <div>
+              <p className="text-xs font-medium">New</p>
+              <p className="text-lg font-bold">{stats.new}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <Clock className="h-5 w-5 text-primary" />
+            <div>
+              <p className="text-xs font-medium">Praying</p>
+              <p className="text-lg font-bold">{stats.praying}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <CheckCircle className="h-5 w-5 text-secondary" />
+            <div>
+              <p className="text-xs font-medium">Answered</p>
+              <p className="text-lg font-bold">{stats.answered}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-accent" />
+            <div>
+              <p className="text-xs font-medium">Urgent</p>
+              <p className="text-lg font-bold">{stats.urgent}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -177,7 +243,12 @@ export default function PrayerRequestsDashboard() {
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search requests..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+              <Input
+                placeholder="Search requests..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
             <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -214,7 +285,10 @@ export default function PrayerRequestsDashboard() {
       {/* Requests List */}
       <div className="space-y-4">
         {filteredRequests.map((request) => (
-          <Card key={request.id} className={request.isUrgent ? "border-destructive" : ""}>
+          <Card
+            key={request.id}
+            className={request.isUrgent ? "border-destructive" : ""}
+          >
             <CardContent className="p-4 md:p-6">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                 <div className="space-y-2 flex-1">
@@ -235,7 +309,10 @@ export default function PrayerRequestsDashboard() {
                     <span>{new Date(request.submittedAt).toLocaleDateString()}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={getStatusColor(request.status) as any} className="flex items-center gap-1">
+                    <Badge
+                      variant={getStatusColor(request.status) as any}
+                      className="flex items-center gap-1"
+                    >
                       {getStatusIcon(request.status)}
                       {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                     </Badge>
@@ -248,7 +325,9 @@ export default function PrayerRequestsDashboard() {
                 <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                   <Select
                     value={request.status}
-                    onValueChange={(value: PrayerRequest["status"]) => updateRequestStatus(request.id, value)}
+                    onValueChange={(value: PrayerRequest["status"]) =>
+                      updateRequestStatus(request.id, value)
+                    }
                   >
                     <SelectTrigger className="w-full sm:w-32">
                       <SelectValue />
@@ -263,7 +342,11 @@ export default function PrayerRequestsDashboard() {
 
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button variant="outline" onClick={() => setSelectedRequest(request)} className="w-full sm:w-auto">
+                      <Button
+                        variant="outline"
+                        onClick={() => setSelectedRequest(request)}
+                        className="w-full sm:w-auto"
+                      >
                         <MessageSquare className="h-4 w-4 mr-2" /> Details
                       </Button>
                     </DialogTrigger>
@@ -271,10 +354,21 @@ export default function PrayerRequestsDashboard() {
                       <h3 className="text-lg font-semibold mb-2">Prayer Request</h3>
                       <p className="text-sm mb-4">{request.request}</p>
                       <div className="space-y-1 text-sm text-muted-foreground">
-                        <p><strong>From:</strong> {request.name} ({request.email})</p>
-                        {request.phone && <p><strong>Phone:</strong> {request.phone}</p>}
-                        <p><strong>Category:</strong> {request.category}</p>
-                        <p><strong>Submitted:</strong> {new Date(request.submittedAt).toLocaleString()}</p>
+                        <p>
+                          <strong>From:</strong> {request.name} ({request.email})
+                        </p>
+                        {request.phone && (
+                          <p>
+                            <strong>Phone:</strong> {request.phone}
+                          </p>
+                        )}
+                        <p>
+                          <strong>Category:</strong> {request.category}
+                        </p>
+                        <p>
+                          <strong>Submitted:</strong>{" "}
+                          {new Date(request.submittedAt).toLocaleString()}
+                        </p>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -289,8 +383,12 @@ export default function PrayerRequestsDashboard() {
         <Card>
           <CardContent className="p-8 text-center">
             <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No prayer requests found</h3>
-            <p className="text-muted-foreground">Try adjusting your search or filter criteria.</p>
+            <h3 className="text-lg font-semibold mb-2">
+              No prayer requests found
+            </h3>
+            <p className="text-muted-foreground">
+              Try adjusting your search or filter criteria.
+            </p>
           </CardContent>
         </Card>
       )}

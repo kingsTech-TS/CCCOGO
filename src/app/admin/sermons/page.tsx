@@ -173,55 +173,86 @@ export default function SermonManager() {
   const handleCategoryChange = (value: string) => setFormData((prev) => ({ ...prev, category: value }))
   const handleStatusChange = (value: string) => setFormData((prev) => ({ ...prev, status: value }))
 
-  // Cloudinary upload (audio/video/image)
-  const handleCloudinaryUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: "audioUrl" | "videoUrl" | "thumbnailUrl"
-  ) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+// Cloudinary upload (auto-detect + duration extraction)
+const handleCloudinaryUpload = async (
+  e: React.ChangeEvent<HTMLInputElement>,
+  type: "audioUrl" | "videoUrl" | "thumbnailUrl"
+) => {
+  const file = e.target.files?.[0]
+  if (!file) return
 
-    setUploading(true)
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+  setUploading(true)
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
 
-    if (!cloudName || !uploadPreset) {
-      toast.error("Cloudinary environment variables not set")
-      setUploading(false)
+  if (!cloudName || !uploadPreset) {
+    toast.error("Cloudinary environment variables not set")
+    setUploading(false)
+    return
+  }
+
+  // ✅ Detect resource type
+  const isVideo = file.type.startsWith("video/")
+  const isAudio = file.type.startsWith("audio/")
+  const resourceType = isVideo || isAudio ? "video" : "image" // Cloudinary treats audio as video resource
+
+  // ✅ Prepare upload
+  const fd = new FormData()
+  fd.append("file", file)
+  fd.append("upload_preset", uploadPreset)
+
+  try {
+    // ✅ Upload to Cloudinary (correct endpoint)
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`, {
+      method: "POST",
+      body: fd,
+    })
+    const data = await res.json()
+
+    if (!data.secure_url) {
+      console.error("Cloudinary upload error:", data)
+      toast.error("Upload failed")
       return
     }
 
-    const fd = new FormData()
-    fd.append("file", file)
-    fd.append("upload_preset", uploadPreset)
-
-    // optional: set resource_type based on file type (auto Cloudinary)
-    try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
-        method: "POST",
-        body: fd,
+    // ✅ Extract media duration (for audio/video only)
+    let durationStr = ""
+    if (isAudio || isVideo) {
+      durationStr = await new Promise<string>((resolve) => {
+        const media = document.createElement(isAudio ? "audio" : "video")
+        media.preload = "metadata"
+        media.src = URL.createObjectURL(file)
+        media.onloadedmetadata = () => {
+          const totalSeconds = media.duration
+          if (isNaN(totalSeconds)) return resolve("")
+          const minutes = Math.floor(totalSeconds / 60)
+          const seconds = Math.floor(totalSeconds % 60)
+          resolve(`${minutes}:${seconds.toString().padStart(2, "0")}`)
+        }
+        media.onerror = () => resolve("")
       })
-      const data = await res.json()
-      if (data.secure_url) {
-        setFormData((prev) => ({
-          ...prev,
-          [type]: data.secure_url,
-          // enforce rule: if audio uploaded, clear video and vice versa
-          ...(type === "audioUrl" ? { videoUrl: "" } : {}),
-          ...(type === "videoUrl" ? { audioUrl: "" } : {}),
-        }))
-        toast.success(`${type.replace("Url", "")} uploaded`)
-      } else {
-        console.error("Cloudinary response error:", data)
-        toast.error("Upload failed")
-      }
-    } catch (err) {
-      console.error("Upload error:", err)
-      toast.error("Upload failed")
-    } finally {
-      setUploading(false)
     }
+
+    // ✅ Update form data
+    setFormData((prev) => ({
+      ...prev,
+      [type]: data.secure_url,
+      duration: durationStr || prev.duration,
+      ...(type === "audioUrl" ? { videoUrl: "" } : {}),
+      ...(type === "videoUrl" ? { audioUrl: "" } : {}),
+    }))
+
+    toast.success(
+      `${type.replace("Url", "")} uploaded successfully${durationStr ? ` (${durationStr})` : ""}`
+    )
+  } catch (err) {
+    console.error("Upload error:", err)
+    toast.error("Upload failed")
+  } finally {
+    setUploading(false)
   }
+}
+
 
   // Save sermon (add or update)
   const handleSubmit = async (e: React.FormEvent) => {

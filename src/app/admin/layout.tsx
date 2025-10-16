@@ -36,7 +36,6 @@ const sidebarItems = [
   { href: "/admin/gallery", icon: ImagePlus, label: "Gallery" },
   { href: "/admin/sermons", icon: Play, label: "Sermons Archive" },
   { href: "/admin/watch-live", icon: Video, label: "Watch Live" },
-  { href: "/admin/donations", icon: DollarSign, label: "Donations & Giving" },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import {
   collection,
   addDoc,
-  getDocs,
   deleteDoc,
   doc,
   updateDoc,
@@ -31,7 +30,7 @@ interface EventPhoto {
   id: string
   url: string
   caption?: string
-  uploadedAt: string
+  uploadedAt: any // Firestore Timestamp
   isFeatured: boolean
 }
 
@@ -44,14 +43,20 @@ export default function PhotoGalleryManager() {
 
   const photoCollection = collection(db, "eventPhoto")
 
-  // 🔹 Real-time Firestore sync
+  // 🔹 Real-time Firestore sync (with proper timestamp handling)
   useEffect(() => {
     const unsubscribe = onSnapshot(photoCollection, (snapshot) => {
       const fetched: EventPhoto[] = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as EventPhoto[]
-      setPhotos(fetched.sort((a, b) => (a.uploadedAt < b.uploadedAt ? 1 : -1)))
+
+      setPhotos(
+        fetched.sort(
+          (a, b) =>
+            (b.uploadedAt?.toMillis?.() || 0) - (a.uploadedAt?.toMillis?.() || 0)
+        )
+      )
     })
     return () => unsubscribe()
   }, [])
@@ -80,7 +85,6 @@ export default function PhotoGalleryManager() {
         if (!res.ok) throw new Error(data.error?.message || "Cloudinary upload failed")
 
         if (replacingId) {
-          // 🔹 Replace an existing image
           const docRef = doc(db, "eventPhoto", replacingId)
           await updateDoc(docRef, {
             url: data.secure_url,
@@ -89,7 +93,6 @@ export default function PhotoGalleryManager() {
           toast.success("Photo updated successfully!")
           setReplacingId(null)
         } else {
-          // 🔹 Add a new photo
           await addDoc(photoCollection, {
             url: data.secure_url,
             caption: "",
@@ -130,7 +133,7 @@ export default function PhotoGalleryManager() {
     toast.success("Featured status updated.")
   }
 
-  // 🔹 Update caption
+  // 🔹 Update caption (onBlur instead of onChange)
   const updateCaption = async (id: string, caption: string) => {
     const docRef = doc(db, "eventPhoto", id)
     await updateDoc(docRef, { caption, updatedAt: serverTimestamp() })
@@ -246,13 +249,16 @@ export default function PhotoGalleryManager() {
                   <Input
                     id={`caption-${photo.id}`}
                     placeholder="Add a caption..."
-                    value={photo.caption || ""}
-                    onChange={(e) => updateCaption(photo.id, e.target.value)}
+                    defaultValue={photo.caption || ""}
+                    onBlur={(e) => updateCaption(photo.id, e.target.value)}
                   />
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Uploaded: {photo.uploadedAt ? new Date(photo.uploadedAt).toLocaleString() : "—"}
+                  Uploaded:{" "}
+                  {photo.uploadedAt
+                    ? new Date(photo.uploadedAt.toMillis()).toLocaleString()
+                    : "—"}
                 </p>
               </CardContent>
             </Card>

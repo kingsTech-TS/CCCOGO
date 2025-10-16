@@ -16,20 +16,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit, Trash2, Save, X, BookOpen } from "lucide-react"
+import { Plus, Edit, Trash2, Save, X } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { db } from "../../../../lib/firebase"
+
+interface BibleReference {
+  verse: string
+  text: string
+}
 
 interface SundaySchoolLesson {
   id: string
   date: string
+  week: string
   topic: string
   memoryVerse: string
-  verseReference: string
+  memoryVerseText: string
   mainContent: string
-  bibleReferences: string[]
+  bibleReferences: BibleReference[]
   questions: string[]
   teacher: string
   status: "draft" | "published"
@@ -44,27 +56,32 @@ export default function SundaySchoolManagement() {
   const [formData, setFormData] = useState<Partial<SundaySchoolLesson>>({})
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // ✅ Real-time Firestore listener
+  // ✅ Real-time listener
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "sundaySchool"), (snapshot) => {
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as SundaySchoolLesson[]
-      setLessons(data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)))
+      setLessons(
+        data.sort(
+          (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+        )
+      )
     })
     return () => unsubscribe()
   }, [])
 
-  // ✅ Create new lesson
+  // ✅ Create
   const handleCreate = () => {
     setIsCreating(true)
     setEditingLesson(null)
     setFormData({
       date: "",
+      week: "",
       topic: "",
       memoryVerse: "",
-      verseReference: "",
+      memoryVerseText: "",
       mainContent: "",
       bibleReferences: [],
       questions: [],
@@ -74,7 +91,7 @@ export default function SundaySchoolManagement() {
     setIsModalOpen(true)
   }
 
-  // ✅ Edit lesson
+  // ✅ Edit
   const handleEdit = (lesson: SundaySchoolLesson) => {
     setEditingLesson(lesson)
     setIsCreating(false)
@@ -82,7 +99,7 @@ export default function SundaySchoolManagement() {
     setIsModalOpen(true)
   }
 
-  // ✅ Save lesson (create or update Firestore)
+  // ✅ Save (Create or Update)
   const handleSave = async () => {
     const collectionRef = collection(db, "sundaySchool")
     const toastId = toast.loading("Saving lesson...")
@@ -109,7 +126,7 @@ export default function SundaySchoolManagement() {
     }
   }
 
-  // ✅ Cancel action
+  // ✅ Cancel
   const handleCancel = () => {
     setIsCreating(false)
     setEditingLesson(null)
@@ -117,18 +134,16 @@ export default function SundaySchoolManagement() {
     setIsModalOpen(false)
   }
 
-  // ✅ Delete lesson
+  // ✅ Delete
   const handleDelete = (id: string) => {
     toast(
       (t) => (
         <div className="flex flex-col space-y-2">
-          <p className="text-sm font-medium">Are you sure you want to delete this lesson?</p>
+          <p className="text-sm font-medium">
+            Are you sure you want to delete this lesson?
+          </p>
           <div className="flex justify-end gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => toast.dismiss(t.id)}
-            >
+            <Button size="sm" variant="outline" onClick={() => toast.dismiss(t.id)}>
               Cancel
             </Button>
             <Button
@@ -149,13 +164,20 @@ export default function SundaySchoolManagement() {
     )
   }
 
-  // ✅ Bible references + questions controls
+  // ✅ Bible References Controls
   const addBibleReference = () =>
-    setFormData({ ...formData, bibleReferences: [...(formData.bibleReferences || []), ""] })
+    setFormData({
+      ...formData,
+      bibleReferences: [...(formData.bibleReferences || []), { verse: "", text: "" }],
+    })
 
-  const updateBibleReference = (index: number, value: string) => {
+  const updateBibleReference = (
+    index: number,
+    field: keyof BibleReference,
+    value: string
+  ) => {
     const refs = [...(formData.bibleReferences || [])]
-    refs[index] = value
+    refs[index] = { ...refs[index], [field]: value }
     setFormData({ ...formData, bibleReferences: refs })
   }
 
@@ -165,6 +187,7 @@ export default function SundaySchoolManagement() {
     setFormData({ ...formData, bibleReferences: refs })
   }
 
+  // ✅ Questions Controls
   const addQuestion = () =>
     setFormData({ ...formData, questions: [...(formData.questions || []), ""] })
 
@@ -194,21 +217,20 @@ export default function SundaySchoolManagement() {
         </Button>
       </div>
 
-           {/* Lessons list */}
+      {/* Lessons list */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {lessons.map((lesson) => {
-          // Convert Firestore timestamps safely
           const createdAt =
             lesson.createdAt?.toDate?.().toLocaleString?.() ??
             (lesson.createdAt?.seconds
               ? new Date(lesson.createdAt.seconds * 1000).toLocaleString()
-              : "—");
+              : "—")
 
           const updatedAt =
             lesson.updatedAt?.toDate?.().toLocaleString?.() ??
             (lesson.updatedAt?.seconds
               ? new Date(lesson.updatedAt.seconds * 1000).toLocaleString()
-              : "—");
+              : "—")
 
           return (
             <Card key={lesson.id} className="shadow-sm">
@@ -225,44 +247,25 @@ export default function SundaySchoolManagement() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <p>
-                  <strong>Date:</strong>{" "}
-                  {lesson.date
-                    ? lesson.date
-                    : createdAt !== "—"
-                    ? createdAt
-                    : "N/A"}
-                </p>
-                <p>
-                  <strong>Memory Verse:</strong>{" "}
-                  {lesson.memoryVerse || "—"}
-                </p>
-                <p className="line-clamp-3">
-                  {lesson.mainContent || "No content yet."}
-                </p>
+                <p><strong>Week:</strong> {lesson.week || "—"}</p>
+                <p><strong>Date:</strong> {lesson.date || createdAt}</p>
+                <p><strong>Memory Verse:</strong> {lesson.memoryVerse || "—"}</p>
+                <p className="line-clamp-3">{lesson.mainContent || "No content yet."}</p>
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Created: {createdAt}</span>
                   <span>Updated: {updatedAt}</span>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEdit(lesson)}
-                  >
+                  <Button size="sm" variant="outline" onClick={() => handleEdit(lesson)}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDelete(lesson.id)}
-                  >
+                  <Button size="sm" variant="destructive" onClick={() => handleDelete(lesson.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>
             </Card>
-          );
+          )
         })}
       </div>
 
@@ -270,12 +273,30 @@ export default function SundaySchoolManagement() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {isCreating ? "Create New Lesson" : "Edit Lesson"}
-            </DialogTitle>
+            <DialogTitle>{isCreating ? "Create New Lesson" : "Edit Lesson"}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Week Dropdown */}
+            <div>
+              <Label>Week</Label>
+              <Select
+                value={formData.week || ""}
+                onValueChange={(value) => setFormData({ ...formData, week: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select week" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="First Sunday">First Sunday</SelectItem>
+                  <SelectItem value="Second Sunday">Second Sunday</SelectItem>
+                  <SelectItem value="Third Sunday">Third Sunday</SelectItem>
+                  <SelectItem value="Fourth Sunday">Fourth Sunday</SelectItem>
+                  <SelectItem value="Fifth Sunday">Fifth Sunday</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Topic */}
             <div>
               <Label>Topic</Label>
@@ -293,19 +314,28 @@ export default function SundaySchoolManagement() {
               <Input
                 type="date"
                 value={formData.date || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, date: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               />
             </div>
 
             {/* Memory Verse */}
             <div>
-              <Label>Memory Verse</Label>
-              <Textarea
+              <Label>Memory Verse (Reference)</Label>
+              <Input
                 value={formData.memoryVerse || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, memoryVerse: e.target.value })
+                }
+              />
+            </div>
+
+            {/* Memory Verse Text */}
+            <div>
+              <Label>Memory Verse Text</Label>
+              <Textarea
+                value={formData.memoryVerseText || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, memoryVerseText: e.target.value })
                 }
               />
             </div>
@@ -326,18 +356,30 @@ export default function SundaySchoolManagement() {
             <div>
               <Label>Bible References</Label>
               {(formData.bibleReferences || []).map((ref, i) => (
-                <div key={i} className="flex gap-2 mt-2">
-                  <Input
-                    value={ref}
-                    onChange={(e) => updateBibleReference(i, e.target.value)}
+                <div key={i} className="flex flex-col gap-2 mt-2 border p-3 rounded-md">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Verse (e.g., John 3:16)"
+                      value={ref.verse}
+                      onChange={(e) =>
+                        updateBibleReference(i, "verse", e.target.value)
+                      }
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeBibleReference(i)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Textarea
+                    placeholder="Verse text"
+                    value={ref.text}
+                    onChange={(e) =>
+                      updateBibleReference(i, "text", e.target.value)
+                    }
                   />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => removeBibleReference(i)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
                 </div>
               ))}
               <Button
@@ -414,10 +456,7 @@ export default function SundaySchoolManagement() {
               <Button variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button
-                onClick={handleSave}
-                className="flex items-center gap-2"
-              >
+              <Button onClick={handleSave} className="flex items-center gap-2">
                 <Save className="h-4 w-4" />
                 Save
               </Button>
@@ -425,7 +464,6 @@ export default function SundaySchoolManagement() {
           </div>
         </DialogContent>
       </Dialog>
-
     </div>
   )
 }

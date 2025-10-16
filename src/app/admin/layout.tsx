@@ -19,6 +19,7 @@ import {
   Eye,
   EyeOff,
   ImagePlus,
+  Video,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -34,6 +35,7 @@ const sidebarItems = [
   { href: "/admin/events", icon: Calendar, label: "Events" },
   { href: "/admin/gallery", icon: ImagePlus, label: "Gallery" },
   { href: "/admin/sermons", icon: Play, label: "Sermons Archive" },
+  { href: "/admin/watch-live", icon: Video, label: "Watch Live" },
   { href: "/admin/donations", icon: DollarSign, label: "Donations & Giving" },
 ]
 
